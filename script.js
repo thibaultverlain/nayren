@@ -3,6 +3,40 @@
   Tu n'as normalement pas besoin d'y toucher.
 */
 
+/* ── Hero : découpe le wordmark en lettres révélées en cascade ── */
+(function () {
+  const wm = document.querySelector(".hero-wordmark");
+  if (!wm) return;
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const text = wm.textContent.trim();
+  wm.textContent = "";
+  [...text].forEach((ch, i) => {
+    const span = document.createElement("span");
+    span.className = "ltr";
+    span.textContent = ch;
+    if (reduce) { span.style.opacity = "1"; span.style.transform = "none"; }
+    else { span.style.animationDelay = (0.15 + i * 0.08) + "s"; }
+    wm.appendChild(span);
+  });
+})();
+
+/* ── Révélation au scroll (cartes + blocs .reveal) ── */
+(function () {
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reduce) return;
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => {
+      if (e.isIntersecting) {
+        e.target.classList.add("in");
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.12, rootMargin: "0px 0px -8% 0px" });
+  // observe les blocs marqués reveal + les cartes (ajoutées plus bas)
+  window.__revealObserver = io;
+  document.querySelectorAll(".reveal").forEach((el) => io.observe(el));
+})();
+
 (function () {
   const grid = document.getElementById("grid");
   if (!grid || typeof PIECES === "undefined") return;
@@ -10,7 +44,7 @@
   PIECES.forEach((p, i) => {
     const card = document.createElement("article");
     card.className = "card";
-    card.style.animationDelay = (i * 0.06) + "s";
+    card.style.transitionDelay = ((i % 3) * 0.09) + "s";
 
     // Visuel
     const visual = document.createElement("div");
@@ -69,5 +103,12 @@
 
     card.appendChild(body);
     grid.appendChild(card);
+
+    // Révélation au scroll
+    if (window.__revealObserver) {
+      window.__revealObserver.observe(card);
+    } else {
+      card.classList.add("in"); // reduced-motion : visible direct
+    }
   });
 })();
